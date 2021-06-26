@@ -771,7 +771,7 @@ def index():
     indexTemplate = template_lookup.get_template("index.html")
     return indexTemplate.render()
 </t>
-<t tx="yen.20210607012830.1">fossilpy web application
+<t tx="yen.20210607012830.1">fossiloauth web application
 
 sudo pip3 install flask authomatic mako</t>
 <t tx="yen.20210607012835.1">Location of openssl from https://www.msys2.org/
