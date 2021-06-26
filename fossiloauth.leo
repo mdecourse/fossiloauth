@@ -366,6 +366,9 @@
 <v t="yen.20210606091602.2"><vh>@clean fossiloauth.py</vh>
 <v t="yen.20210606091714.1"><vh>Declarations (fossiloauth.py)</vh></v>
 <v t="yen.20210607012220.1"><vh>login_required</vh></v>
+<v t="yen.20210626175550.1"><vh>repo</vh></v>
+<v t="yen.20210626180723.1"><vh>create_account</vh></v>
+<v t="yen.20210626180546.1"><vh>password_generator</vh></v>
 <v t="yen.20210607012641.1"><vh>index</vh></v>
 <v t="yen.20210607012249.1"><vh>menu</vh></v>
 <v t="yen.20210607011234.1"><vh>login</vh></v>
@@ -502,8 +505,8 @@ from config import CONFIG
 from config import CALLBACK_URL
 # for login.html template
 from config import site
-# for login to Fossil SCM repo
-from config import fossil
+# for repo
+from config import repo_path
 
 # for generating secret_key
 import os
@@ -516,6 +519,11 @@ from mako.lookup import TemplateLookup
 
 # for login_required
 from functools import wraps
+# for repo
+import sqlite3
+# for password_generator
+import random
+import string
 
 # Instantiate Authomatic.
 # generate secret string randomly
@@ -717,6 +725,8 @@ def login(provider_name):
         template_lookup =
         '''
         # only get the string before @
+        loginEmail = result.user.email
+        session["email"] = loginEmail
         loginUser = result.user.email.split("@")[0]
         loginDomain = result.user.email.split("@")[1]
         
@@ -725,16 +735,17 @@ def login(provider_name):
         #if loginUser in kmoler:
         
         # only @gm.nfu.edu.tw can login
-        if loginDomain == "gm.nfu.edu.tw":
-            session["user"] = loginUser
-
-            session["login"] = True
-            template_lookup = TemplateLookup(directories=[template_root_dir])
-            loginTemplate = template_lookup.get_template("login.html")
-            
-            return loginTemplate.render(result=result, CALLBACK_URL=CALLBACK_URL, site=site)
-        else:
-            return "Sorry, you are not allowed to login."
+        #if loginDomain == "gm.nfu.edu.tw":
+        #session["user"] = loginUser
+        # use loginEmail as account
+        session["user"] = loginEmail.replace('@', '_at_')
+        session["login"] = True
+        template_lookup = TemplateLookup(directories=[template_root_dir])
+        loginTemplate = template_lookup.get_template("login.html")
+        
+        return loginTemplate.render(result=result, CALLBACK_URL=CALLBACK_URL, site=site)
+        #else:
+            #return "Sorry, you are not allowed to login."
 
     # Don't forget to return the response.
     return response
@@ -765,7 +776,6 @@ def menu():
     return menuTemplate.render(menuList=menuList)</t>
 <t tx="yen.20210607012641.1">@app.route('/')
 # root of the system can not set "login_required" decorator
-# 開始改用 Make 作為 Template
 def index():
     template_lookup = TemplateLookup(directories=[template_root_dir])
     indexTemplate = template_lookup.get_template("index.html")
@@ -1863,13 +1873,15 @@ else:
  
 con.close()</t>
 <t tx="yen.20210626140559.1">@app.route('/forum')
+# at the end of forum must logout from 8443
 @login_required
 def forum():
     """Create forum routine"""
-    # username and password in config.py
+    username, userpass = repo()
+
     with requests.Session() as s:
         url = 'https://fossil.kmol.info/u/yen/login'
-        post_var = {'u': fossil[0], 'p': fossil[1]}
+        post_var = {'u': username, 'p': userpass}
         headers = {'X-Requested-With': 'XMLHttpRequest'}
         result = s.post(url, data = post_var, headers = headers)
         cookie = s.cookies.get_dict()
@@ -1879,6 +1891,51 @@ def forum():
         forum = "https://fossil.kmol.info/u/yen/forum"
         response = make_response(redirect(forum))
         response.set_cookie(key, value)
+        # logout from 8443
+        logout()
         return response</t>
+<t tx="yen.20210626175550.1"># Decide to create account or return account/passwd
+def repo():
+    login = session.get('login')
+    username = session.get('user')
+    if login == True:
+        con = sqlite3.connect(repo_path)
+        cur = con.cursor()
+         
+        # check if login name existed
+        # pw field is the password
+        cur.execute("select pw from user where login='" + username + "';")
+        password = cur.fetchall()
+
+        if len(password) == 0:
+            # no associated account yet
+            # create account for this login user
+            userpass = password_generator()
+            return create_account(username, userpass)
+        else:
+            userpass = password_generator()
+            # update user password
+            cur.execute("update user set pw='" + userpass + "' where login='" + username + "';")
+            con.commit()
+            return username, userpass
+        con.close()
+    else:
+        return redirect(url_for('index'))
+    </t>
+<t tx="yen.20210626180546.1"># 用來以亂數建立密碼的函式
+def password_generator(size=4, chars=string.ascii_lowercase + string.digits):
+    return ''.join(random.choice(chars) for _ in range(size))</t>
+<t tx="yen.20210626180723.1">def create_account(username, userpass):
+    login = session.get('login')
+    if login == True:
+        con = sqlite3.connect(repo_path)
+        cur = con.cursor()
+        email = session.get("email")
+        mtime = str(int(time.time()))
+        cur.execute("insert into user (login,pw,cap,info, mtime) VALUES('" + username + "','" + userpass + "','bfjk234C','" + email + "','" + mtime + "');")
+        con.commit()
+        con.close()
+    return username, userpass
+</t>
 </tnodes>
 </leo_file>
