@@ -1,0 +1,12 @@
+## menu.html
+<%inherit file="base.html"/>
+
+<%block name="header">
+    <!-- this is some header content -->
+</%block>
+
+        % for i in menuList:
+            <a href='/${i}'> ${i}</a><br />
+        % endfor
+
+

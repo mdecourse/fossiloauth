@@ -1,0 +1,43 @@
+## base.html
+<html>
+    <body>
+        <div class="header">
+            <%block name="header"/>
+        </div>
+        <%doc>
+            這是 template 中的多行註解
+            index.html
+            希望可以判定使用者是否登入
+        </%doc>
+        <%!
+        # 這裡為合法的 Python 程式碼
+        # 必須要導入 session, 隨後在 template 中才可使玉ㄥ
+        from flask import session
+        
+        login = session.get("login")
+        if login == True:
+            # 已經登入
+            output ='''
+            <a href="/logout">logout</a><br />
+            <a href="/menu">menu</a><br />
+            '''
+        else:
+            # 尚未登入
+            output = '''
+            <!--Links to the login handler-->
+            Only @gm users can login <br /><br />
+            Login with <a href="login/google">google</a>.<br />
+            '''
+        %>
+        ## template 中的註解
+        ${output}
+
+        ${self.body()}
+
+        <div class="footer">
+            <%block name="footer">
+                <!-- this is the footer -->
+            </%block>
+        </div>
+    </body>
+</html>
