@@ -111,7 +111,9 @@ def index():
 @app.route("/menu")
 @login_required
 def menu():
-    menuList = ["form", "forum"]
+    #menuList = ["form", "forum"]
+    # oauth only provide forum
+    menuList = ["forum"]
     template_lookup = TemplateLookup(directories=[template_root_dir])
     menuTemplate = template_lookup.get_template("menu.html")
     return menuTemplate.render(menuList=menuList)

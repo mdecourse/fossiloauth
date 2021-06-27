@@ -564,7 +564,7 @@ if __name__ == "__main__":
 <t tx="yen.20210606091727.1">import fossiloauth
 from config import site
 
-uwsgi = False
+uwsgi = True
 
 domain_name = site[0]
 port = site[1]
@@ -770,7 +770,9 @@ def logout():
 <t tx="yen.20210607012249.1">@app.route("/menu")
 @login_required
 def menu():
-    menuList = ["form", "forum"]
+    #menuList = ["form", "forum"]
+    # oauth only provide forum
+    menuList = ["forum"]
     template_lookup = TemplateLookup(directories=[template_root_dir])
     menuTemplate = template_lookup.get_template("menu.html")
     return menuTemplate.render(menuList=menuList)</t>
@@ -783,7 +785,7 @@ def index():
 </t>
 <t tx="yen.20210607012830.1">fossiloauth web application
 
-sudo pip3 install flask authomatic mako</t>
+sudo pip3 install flask authomatic makoi</t>
 <t tx="yen.20210607012835.1">Location of openssl from https://www.msys2.org/
 
 y:\msys64\mingw64\bin\openssl.exe

@@ -1,7 +1,7 @@
 import fossiloauth
 from config import site
 
-uwsgi = False
+uwsgi = True
 
 domain_name = site[0]
 port = site[1]
