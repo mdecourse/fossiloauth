@@ -359,10 +359,12 @@
 </v>
 <v t="yen.20210626135328.1"><vh>login to Fossil</vh></v>
 <v t="yen.20210626135449.1"><vh>Python sqlite</vh></v>
+<v t="wcm2021.20211030165548.1"><vh>about config.py</vh></v>
 <v t="yen.20210606100250.1"><vh>@edit README.md</vh></v>
 <v t="yen.20210606100130.1"><vh>@edit .gitignore</vh></v>
 <v t="yen.20210606100214.1"><vh>@edit LICENSE</vh></v>
 <v t="yen.20210607011849.1"><vh>@edit config.py</vh></v>
+<v t="wcm2021.20211030195146.1"><vh>@edit test.py</vh></v>
 <v t="yen.20210606091602.2"><vh>@clean fossiloauth.py</vh>
 <v t="yen.20210606091714.1"><vh>Declarations (fossiloauth.py)</vh></v>
 <v t="yen.20210607012220.1"><vh>login_required</vh></v>
@@ -391,6 +393,41 @@
 </v>
 </vnodes>
 <tnodes>
+<t tx="wcm2021.20211030165548.1">以下在整理 fossiloauth 相關設定參數, 擬改寫時將所有設定存入 config.py, 然後導入主要程式中運用.
+
+當配置 fossiloauth 網際程式時, 需要:
+
+Google oauth2 client key and secret 檔案 (必須放在倉儲以外的目錄):
+
+例如:
+
+第一列: 214-this_is_key.apps.googleusercontent.com
+
+第二例: this_is_secret-pktheSAqSunfu
+
+Fossil SCM server domain name: 例如: c1.kmol.info
+
+Fossil SCM server repository name: 例如: pj2022
+
+從 domain name 與 repository name 得知:
+
+Login 連結: https://c1.kmol.info/pj2022/login
+
+Forum 連結: https://c1.kmol.info/pj2022/forum
+
+自建 Fossil SCM 帳號權限: 例如: 'bfjk234C'
+
+自建 Fossil SCM 倉儲存放位置: 例如: path = "c:\pj2022\repo"
+
+fossiloauth 網際程式執行 URL: 例如: https://c1.kmol.info:8443, 以及執行 forum 連結 https://c1.kmol.info:8443/forum (目的在透過 AJAX 將登入帳號與密碼送至 Server, 以便取得登入 Fossil SCM server 的 session).
+
+以上這些設定應該要寫入 config.py
+
+因為要改寫 fossiloauth, 因此在 Ubuntu 安裝 Leo:
+
+sudo pip3 install leo
+
+安裝結束後, 以 leo&amp; 啟動.</t>
 <t tx="yen.20210606091602.2">@others
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
@@ -501,6 +538,10 @@ import requests
 from authomatic.adapters import WerkzeugAdapter
 from authomatic import Authomatic
 
+# changes to just import config
+import config
+
+'''
 # from config.py 導入 CONFIG and CALLBACK_URL
 from config import CONFIG
 from config import CALLBACK_URL
@@ -508,6 +549,7 @@ from config import CALLBACK_URL
 from config import site
 # for repo
 from config import repo_path
+'''
 
 # for generating secret_key
 import os
@@ -529,7 +571,7 @@ import string
 # Instantiate Authomatic.
 # generate secret string randomly
 secret = os.urandom(24).hex()
-authomatic = Authomatic(CONFIG, secret, report_errors=False)
+authomatic = Authomatic(config.CONFIG, secret, report_errors=False)
 
 # 確定程式檔案所在目錄, 在 Windows 有最後的反斜線
 _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
@@ -557,18 +599,19 @@ if __name__ == "__main__":
     if uwsgi:
         application = fossiloauth.app
     else:
+        domain_name = "127.0.0.1"
         fossiloauth.app.run(host=domain_name, port=port, ssl_context='adhoc')
         
 @language python
 @tabwidth -4
 </t>
 <t tx="yen.20210606091727.1">import fossiloauth
-from config import site
+import config
 
-uwsgi = True
+uwsgi = config.uwsgi
 
-domain_name = site[0]
-port = site[1]
+domain_name = config.domain_name
+port = config.flask_port
 
 application = fossiloauth.app
 
@@ -744,7 +787,7 @@ def login(provider_name):
         template_lookup = TemplateLookup(directories=[template_root_dir])
         loginTemplate = template_lookup.get_template("login.html")
         
-        return loginTemplate.render(result=result, CALLBACK_URL=CALLBACK_URL, site=site)
+        return loginTemplate.render(result=result, CALLBACK_URL=config.CALLBACK_URL)
         #else:
             #return "Sorry, you are not allowed to login."
 
@@ -1883,7 +1926,7 @@ def forum():
     username, userpass = repo()
 
     with requests.Session() as s:
-        url = 'https://fossil.kmol.info/u/yen/login'
+        url = config.login_url
         post_var = {'u': username, 'p': userpass}
         headers = {'X-Requested-With': 'XMLHttpRequest'}
         result = s.post(url, data = post_var, headers = headers)
@@ -1891,7 +1934,7 @@ def forum():
         key = list(cookie.keys())[0]
         value = cookie[key]
 
-        forum = "https://fossil.kmol.info/u/yen/forum"
+        forum = config.forum_url
         response = make_response(redirect(forum))
         response.set_cookie(key, value)
         # logout from 8443
@@ -1902,7 +1945,8 @@ def repo():
     login = session.get('login')
     username = session.get('user')
     if login == True:
-        con = sqlite3.connect(repo_path)
+        # needs to know repo_path
+        con = sqlite3.connect(config.default_repo_path)
         cur = con.cursor()
          
         # check if login name existed
@@ -1931,11 +1975,11 @@ def password_generator(size=4, chars=string.ascii_lowercase + string.digits):
 <t tx="yen.20210626180723.1">def create_account(username, userpass):
     login = session.get('login')
     if login == True:
-        con = sqlite3.connect(repo_path)
+        con = sqlite3.connect(config.default_repo_path)
         cur = con.cursor()
         email = session.get("email")
         mtime = str(int(time.time()))
-        cur.execute("insert into user (login,pw,cap,info, mtime) VALUES('" + username + "','" + userpass + "','bfjk234C','" + email + "','" + mtime + "');")
+        cur.execute("insert into user (login,pw,cap,info, mtime) VALUES('" + username + "','" + userpass + "','"+config.repo_caps+"','" + email + "','" + mtime + "');")
         con.commit()
         con.close()
     return username, userpass

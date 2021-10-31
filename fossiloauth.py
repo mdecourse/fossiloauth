@@ -8,6 +8,10 @@ import requests
 from authomatic.adapters import WerkzeugAdapter
 from authomatic import Authomatic
 
+# changes to just import config
+import config
+
+'''
 # from config.py 導入 CONFIG and CALLBACK_URL
 from config import CONFIG
 from config import CALLBACK_URL
@@ -15,6 +19,7 @@ from config import CALLBACK_URL
 from config import site
 # for repo
 from config import repo_path
+'''
 
 # for generating secret_key
 import os
@@ -36,7 +41,7 @@ import string
 # Instantiate Authomatic.
 # generate secret string randomly
 secret = os.urandom(24).hex()
-authomatic = Authomatic(CONFIG, secret, report_errors=False)
+authomatic = Authomatic(config.CONFIG, secret, report_errors=False)
 
 # 確定程式檔案所在目錄, 在 Windows 有最後的反斜線
 _curdir = os.path.join(os.getcwd(), os.path.dirname(__file__))
@@ -65,7 +70,8 @@ def repo():
     login = session.get('login')
     username = session.get('user')
     if login == True:
-        con = sqlite3.connect(repo_path)
+        # needs to know repo_path
+        con = sqlite3.connect(config.default_repo_path)
         cur = con.cursor()
          
         # check if login name existed
@@ -91,11 +97,11 @@ def repo():
 def create_account(username, userpass):
     login = session.get('login')
     if login == True:
-        con = sqlite3.connect(repo_path)
+        con = sqlite3.connect(config.default_repo_path)
         cur = con.cursor()
         email = session.get("email")
         mtime = str(int(time.time()))
-        cur.execute("insert into user (login,pw,cap,info, mtime) VALUES('" + username + "','" + userpass + "','bfjk234C','" + email + "','" + mtime + "');")
+        cur.execute("insert into user (login,pw,cap,info, mtime) VALUES('" + username + "','" + userpass + "','"+config.repo_caps+"','" + email + "','" + mtime + "');")
         con.commit()
         con.close()
     return username, userpass
@@ -159,7 +165,7 @@ def login(provider_name):
         template_lookup = TemplateLookup(directories=[template_root_dir])
         loginTemplate = template_lookup.get_template("login.html")
         
-        return loginTemplate.render(result=result, CALLBACK_URL=CALLBACK_URL, site=site)
+        return loginTemplate.render(result=result, CALLBACK_URL=config.CALLBACK_URL)
         #else:
             #return "Sorry, you are not allowed to login."
 
@@ -202,7 +208,7 @@ def forum():
     username, userpass = repo()
 
     with requests.Session() as s:
-        url = 'https://fossil.kmol.info/u/yen/login'
+        url = config.login_url
         post_var = {'u': username, 'p': userpass}
         headers = {'X-Requested-With': 'XMLHttpRequest'}
         result = s.post(url, data = post_var, headers = headers)
@@ -210,7 +216,7 @@ def forum():
         key = list(cookie.keys())[0]
         value = cookie[key]
 
-        forum = "https://fossil.kmol.info/u/yen/forum"
+        forum = config.forum_url
         response = make_response(redirect(forum))
         response.set_cookie(key, value)
         # logout from 8443

@@ -1,14 +1,7 @@
 import authomatic
 from authomatic.providers import oauth2
 
-site = ["fossil.kmol.info", "8443"]
-domain_name = site[0]
-port = site[1]
-CALLBACK_URL = "https://"+domain_name+":"+port
-repo_path = "/home/yen/repository/u/yen.fossil"
-
 # read client_id and client_secret from safe place other than put into script
-# current setting only allow @gm user login
 keyFile = open('./../scrum2_client_secret.txt', 'r')
 with open('./../scrum2_client_secret.txt', 'r') as f:
     key = f.read().splitlines()
@@ -21,3 +14,22 @@ CONFIG = {
             'scope': oauth2.Google.user_info_scope
         }
     }
+
+domain_name = "c2.kmol.info"
+default_repo = "pj2022"
+repo_caps = "bfjk234C"
+# for Windows 
+#repo_path = "c:/pj2022/repo/"
+# for Ubuntu
+repo_path = "/home/wcm2021/repository/"
+fossil_port = "5443"
+flask_port = "8443"
+uwsgi = True
+
+# derived
+default_repo_path = repo_path+default_repo+".fossil"
+flask_url = "https://"+domain_name+":"+flask_port
+flask_forum = "https://"+domain_name+":"+flask_port+"/forum"
+login_url = "https://"+domain_name+":"+fossil_port+"/"+default_repo+"/login"
+forum_url = "https://"+domain_name+":"+fossil_port+"/"+default_repo+"/forum"
+CALLBACK_URL = flask_forum
