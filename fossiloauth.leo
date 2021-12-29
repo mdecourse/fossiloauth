@@ -403,7 +403,7 @@ Google oauth2 client key and secret 檔案 (必須放在倉儲以外的目錄):
 
 第一列: 214-this_is_key.apps.googleusercontent.com
 
-第二例: this_is_secret-pktheSAqSunfu
+第二列: this_is_secret-pktheSAqSunfu
 
 Fossil SCM server domain name: 例如: c1.kmol.info
 
